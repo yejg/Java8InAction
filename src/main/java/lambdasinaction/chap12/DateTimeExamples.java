@@ -1,8 +1,5 @@
 package lambdasinaction.chap12;
 
-import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
-import static java.time.temporal.TemporalAdjusters.nextOrSame;
-
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.DayOfWeek;
@@ -12,6 +9,9 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Month;
+import java.time.Period;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.time.chrono.JapaneseDate;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeFormatterBuilder;
@@ -22,20 +22,81 @@ import java.time.temporal.TemporalAdjuster;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
+
+import static java.time.temporal.TemporalAdjusters.dayOfWeekInMonth;
+import static java.time.temporal.TemporalAdjusters.lastDayOfMonth;
+import static java.time.temporal.TemporalAdjusters.nextOrSame;
 
 public class DateTimeExamples {
 
+    private static final ThreadLocal<DateFormat> formatters2 = new ThreadLocal<DateFormat>();
+
+    static {
+        System.out.println("static code...");
+        formatters2.set(new SimpleDateFormat("dd-MMM-yyyy"));
+    }
+
     private static final ThreadLocal<DateFormat> formatters = new ThreadLocal<DateFormat>() {
         protected DateFormat initialValue() {
+            System.out.println("initialValue...");
             return new SimpleDateFormat("dd-MMM-yyyy");
         }
     };
 
     public static void main(String[] args) {
+        System.out.println("main...");
+
+        usePeriod();
+        useZoneId();
+
         useOldDate();
         useLocalDate();
         useTemporalAdjuster();
         useDateFormatter();
+
+        Date dateNow = localDateTime2Date(LocalDateTime.now());
+        LocalDateTime localDateTimeNow = date2LocalDateTime(dateNow);
+        System.out.println("done.");
+    }
+
+
+    public static Date localDateTime2Date(LocalDateTime localDateTime) {
+        ZoneId zoneId = ZoneId.systemDefault();
+        ZonedDateTime zdt = localDateTime.atZone(zoneId);
+        Date date = Date.from(zdt.toInstant());
+        System.out.println(date.toString());
+        return date;
+    }
+
+    public static LocalDateTime date2LocalDateTime(Date date) {
+        ZoneId zoneId = ZoneId.systemDefault();
+        Instant instant = date.toInstant();
+        LocalDateTime localDateTime = instant.atZone(zoneId).toLocalDateTime();
+        return localDateTime;
+    }
+
+    private static void useZoneId() {
+        ZoneId zoneId = TimeZone.getDefault().toZoneId();
+        ZoneId romeZone = ZoneId.of("Europe/Rome");
+        LocalDate date = LocalDate.of(2014, Month.MARCH, 18);
+        ZonedDateTime zdt1 = date.atStartOfDay(romeZone);
+        LocalDateTime dateTime = LocalDateTime.of(2014, Month.MARCH, 18, 13, 45);
+        ZonedDateTime zdt2 = dateTime.atZone(romeZone);
+        Instant instant = Instant.now();
+        ZonedDateTime zdt3 = instant.atZone(romeZone);
+    }
+
+    private static void usePeriod() {
+        Period period = Period.of(2018, 11, 30);
+
+        Period between = Period.between(LocalDate.of(2018, 11, 29), LocalDate.of(2018, 11, 30));
+        System.out.println(between.getDays());
+
+        // 由于Duration类主要用于以秒和纳 秒衡量时间的长短，你不能向between方法传递LocalDate对象做参数
+        // Duration duration = Duration.between(LocalDate.of(2018, 11, 19), LocalDate.of(2018, 11, 30));// error
+        Duration duration = Duration.between(LocalTime.of(13, 45, 20), LocalTime.of(13, 45, 19));
+        duration.getSeconds();
     }
 
     private static void useOldDate() {
@@ -45,13 +106,13 @@ public class DateTimeExamples {
         System.out.println(formatters.get().format(date));
 
         Calendar calendar = Calendar.getInstance();
-        calendar.set(2014, Calendar.FEBRUARY, 18);
+        calendar.set(2018, Calendar.FEBRUARY, 18);
         System.out.println(calendar);
     }
 
     private static void useLocalDate() {
-        LocalDate date = LocalDate.of(2014, 3, 18);
-        int year = date.getYear(); // 2014
+        LocalDate date = LocalDate.of(2018, 3, 18);
+        int year = date.getYear(); // 2018
         Month month = date.getMonth(); // MARCH
         int day = date.getDayOfMonth(); // 18
         DayOfWeek dow = date.getDayOfWeek(); // TUESDAY
@@ -69,7 +130,8 @@ public class DateTimeExamples {
         int second = time.getSecond(); // 20
         System.out.println(time);
 
-        LocalDateTime dt1 = LocalDateTime.of(2014, Month.MARCH, 18, 13, 45, 20); // 2014-03-18T13:45
+        LocalDateTime localDateTime = LocalDateTime.parse("20181130140100", DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
+        LocalDateTime dt1 = LocalDateTime.of(2018, Month.MARCH, 18, 13, 45, 20); // 2018-03-18T13:45
         LocalDateTime dt2 = LocalDateTime.of(date, time);
         LocalDateTime dt3 = date.atTime(13, 45, 20);
         LocalDateTime dt4 = date.atTime(time);
@@ -97,7 +159,10 @@ public class DateTimeExamples {
     }
 
     private static void useTemporalAdjuster() {
-        LocalDate date = LocalDate.of(2014, 3, 18);
+        LocalDate date = LocalDate.of(2018, 11, 30);
+        TemporalAdjuster adjuster = dayOfWeekInMonth(1, DayOfWeek.MONDAY);
+        LocalDate with = date.with(adjuster);
+
         date = date.with(nextOrSame(DayOfWeek.SUNDAY));
         System.out.println(date);
         date = date.with(lastDayOfMonth());
@@ -122,6 +187,7 @@ public class DateTimeExamples {
         System.out.println(date);
     }
 
+    // 自定义TemporalAdjuster
     private static class NextWorkingDay implements TemporalAdjuster {
         @Override
         public Temporal adjustInto(Temporal temporal) {
@@ -134,7 +200,7 @@ public class DateTimeExamples {
     }
 
     private static void useDateFormatter() {
-        LocalDate date = LocalDate.of(2014, 3, 18);
+        LocalDate date = LocalDate.of(2018, 3, 18);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
         DateTimeFormatter italianFormatter = DateTimeFormatter.ofPattern("d. MMMM yyyy", Locale.ITALIAN);
 

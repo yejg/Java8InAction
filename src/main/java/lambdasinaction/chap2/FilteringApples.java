@@ -1,12 +1,28 @@
 package lambdasinaction.chap2;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class FilteringApples{
 
 	public static void main(String ... args){
 
-		List<Apple> inventory = Arrays.asList(new Apple(80,"green"), new Apple(155, "green"), new Apple(120, "red"));	
+		List<Apple> inventory = Arrays.asList(new Apple(80,"green"), new Apple(155, "green"), new Apple(120, "red"));
+
+		List<Apple> collect = inventory.stream().filter(apple -> apple.getWeight() > 80).collect(Collectors.toList());
+		collect.stream().forEach(System.out::println);
+
+		System.out.println("----------------");
+		inventory.stream().sorted((a1,a2) -> a1.getWeight().compareTo(a2.getWeight())).forEach(System.out::println);
+		System.out.println("----------------");
+		inventory.stream().sorted(Comparator.comparing(Apple::getWeight).reversed()).forEach(System.out::println);
+		System.out.println("----------------");
+		inventory.stream().forEach(System.out::println);// 顺序遍历打印
+		System.out.println("----------------");
+		inventory.parallelStream().forEach(System.out::println);// 并行遍历打印，顺序随机
+
+		System.out.println("----------------");
+
 
 		// [Apple{color='green', weight=80}, Apple{color='green', weight=155}]
 		List<Apple> greenApples = filterApplesByColor(inventory, "green");

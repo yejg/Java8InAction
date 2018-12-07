@@ -55,6 +55,10 @@ public class BestPriceFinder {
         return shops.stream()
                 .map(shop -> CompletableFuture.supplyAsync(() -> shop.getPrice(product), executor))
                 .map(future -> future.thenApply(Quote::parse))
+                // thenCompose方法允许你对两个异步操作进行流水线，第一个操作完成时，将其结果作为参数传递给第二个操作
+                // thenComposeAsync、thenApplyAsync
+                // 名称中不带Async的方法和它的前一个任务一样，在同一个线程中运行；
+                // 而名称以Async结尾的方法会将后续的任务提交到一个线程池，所以每个任务是由不同的线程处理的。
                 .map(future -> future.thenCompose(quote -> CompletableFuture.supplyAsync(() -> Discount.applyDiscount(quote), executor)));
     }
 

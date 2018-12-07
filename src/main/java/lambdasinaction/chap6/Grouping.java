@@ -33,12 +33,13 @@ public class Grouping {
     }
 
     private static Map<Dish.Type, Set<String>> groupDishTagsByType() {
-        return menu.stream().collect(groupingBy(Dish::getType, flatMapping(dish -> dishTags.get( dish.getName() ).stream(), toSet())));
+        // flatMapping since jdk 9
+        return menu.stream().collect(groupingBy(Dish::getType, flatMapping((Dish dish) -> dishTags.get( dish.getName() ).stream(), toSet())));
     }
 
     private static Map<Dish.Type, List<Dish>> groupCaloricDishesByType() {
 //        return menu.stream().filter(dish -> dish.getCalories() > 500).collect(groupingBy(Dish::getType));
-        return menu.stream().collect(groupingBy(Dish::getType, filtering(dish -> dish.getCalories() > 500, toList())));
+        return menu.stream().collect(groupingBy(Dish::getType, filtering((Dish dish) -> dish.getCalories() > 500, toList())));
     }
 
     private static Map<CaloricLevel, List<Dish>> groupDishesByCaloricLevel() {

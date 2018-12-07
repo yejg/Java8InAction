@@ -4,6 +4,9 @@ import java.io.*;
 public class ExecuteAround {
 
 	public static void main(String ...args) throws IOException{
+		String path = "src/main/resources/lambdasinaction/chap3/data.txt";
+		File f = new File(path);
+		System.out.println(f.getAbsolutePath());
 
         // method we want to refactor to make more flexible
         String result = processFileLimited();
@@ -17,6 +20,10 @@ public class ExecuteAround {
 		String twoLines = processFile((BufferedReader b) -> b.readLine() + b.readLine());
 		System.out.println(twoLines);
 
+		System.out.println("-----------------------------");
+		BufferedReaderProcessor processor = (BufferedReader b) -> b.readLine();
+		String s = processor.process(new BufferedReader(new FileReader("lambdasinaction/chap3/data.txt")));
+		System.out.println(s);
 	}
 
     public static String processFileLimited() throws IOException {
@@ -34,6 +41,7 @@ public class ExecuteAround {
 
 	}
 
+	@FunctionalInterface
 	public interface BufferedReaderProcessor{
 		public String process(BufferedReader b) throws IOException;
 
